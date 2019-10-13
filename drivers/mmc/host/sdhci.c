@@ -1849,7 +1849,9 @@ void sdhci_set_uhs_signaling(struct sdhci_host *host, unsigned timing)
 		ctrl_2 |= SDHCI_CTRL_UHS_SDR104;
 	else if (timing == MMC_TIMING_UHS_SDR12)
 		ctrl_2 |= SDHCI_CTRL_UHS_SDR12;
-	else if (timing == MMC_TIMING_UHS_SDR25)
+	else if (timing == MMC_TIMING_SD_HS ||
+		 timing == MMC_TIMING_MMC_HS ||
+		 timing == MMC_TIMING_UHS_SDR25)
 		ctrl_2 |= SDHCI_CTRL_UHS_SDR25;
 	else if (timing == MMC_TIMING_UHS_SDR50)
 		ctrl_2 |= SDHCI_CTRL_UHS_SDR50;
@@ -3078,6 +3080,10 @@ static irqreturn_t sdhci_irq(int irq, void *dev_id)
 						       SDHCI_INT_CARD_REMOVE);
 			result = IRQ_WAKE_THREAD;
 		}
+
+		if ((intmask & SDHCI_INT_DATA_END) && !host->data &&
+		    host->cmd && (host->cmd == host->cmd->mrq->stop))
+			intmask &= ~SDHCI_INT_DATA_END;
 
 		if (intmask & SDHCI_INT_CMD_MASK)
 			sdhci_cmd_irq(host, intmask & SDHCI_INT_CMD_MASK, &intmask);
